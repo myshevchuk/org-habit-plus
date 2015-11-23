@@ -532,22 +532,20 @@ It will be green even if it was done after the deadline."
 
 
 (defun org-habit-reschedule (&optional pom)
-  "Reschedule habit on the alowed day"
+  "Reschedule habit on the allowed day"
   (when (org-is-habit-p)
-    (message "executing function")
     (save-excursion
       (if pom (goto-char pom))
       (let* ((weekdays (org-habit-get-weekdays (org-entry-properties (point)))) 
              (weekday (org-habit--time-to-weekday (org-get-scheduled-time (point))))
              (s-repeater (org-get-repeat org-scheduled-string))  ; scheduled repeater
              (norm-r-days (org-habit--weekday-increment (org-habit-duration-to-days s-repeater) 0))) ; normalized repeat days (0..7) 
-        ;; Because the org handled rescheduled actually happens after this function is executed via the hook,
+        ;; Because the org-handled rescheduling actually happens after this function is executed via the hook,
         ;; we must adjust the date in advance  
         (setq weekday (org-habit--weekday-increment weekday norm-r-days))
         (while (not (member weekday weekdays))
           (org-entry-put (point) "SCHEDULED" "later")
-          (setq weekday (org-habit--weekday-increment weekday 1))
-          (message "%s" weekday))))))
+          (setq weekday (org-habit--weekday-increment weekday 1)))))))
 
 (defun org-habit-maybe-reschedule ()
   (when (and (not (member org-state org-done-keywords))

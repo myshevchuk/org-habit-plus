@@ -1,0 +1,24 @@
+#+TITLE:	Org Habit +
+#+AUTHOR:	Michale Shevchuk
+#+EMAIL:	m.shev4uk@gmail.com
+#+DATE:		2015-11-23
+#+STARTUP:	content
+
+* What's this?
+
+  The great org-habit module lacks a way to handle a very common type of habits, those that can/may/must be executed only on certain weekdays.
+  There exist several workarounds like creating a habit for each day of interest, but they are less flexible and spoil the beauty of Org.
+
+  This little enhancement aims to fill the gap. It's a fork of the original org-habit module and most of the internals are left untouched.
+
+* What works
+  
+  The desired minimum.
+
+* Installation
+
+  As simple as putting the org-habit-plus.el into the load path and adding =org-habit-plus= to the =org-modules= list.
+
+* How it works
+
+  TODO

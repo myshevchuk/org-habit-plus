@@ -1,36 +1,60 @@
 ;;; org-habit-plus.el --- The (enhanced) habit tracking code for Org-mode
 
-
 ;; Original Author: John Wiegley
-
 ;; Copyright (C) 2009-2015 Free Software Foundation, Inc.
+
 ;; Copyright (C) 2015 Michael Shevchuk <m.shev4uk@gmail.com>
+;;
+;; Author: Michael Shevchuk
+;; Keywords: org-mode, habits
+;; Homepage: https://github.com/oddious/org-habit-plus
+;; Version: 0.1.0
 
 ;; This file is not part of GNU Emacs.
+
+;;; License:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
-
+;;
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-
+;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
+
 ;;; Commentary:
 
 ;; This file contains the habit tracking utility for Org-mode.
-;; It's code is largly based on the original org-habit module by John Wiegly
-
+;; It's code is largly based on the original org-habit code by John Wiegly.
+;;
 ;; The main goal of org-habit-plus is to provide a way to track habits only on certain
 ;; days of week. The secondary goal (not realized yet) is to make it possible to distinguish between
 ;; several DONE states. 
-
+;;
+;; Usage:
+;;
+;; Load org-habit-plus: (setq org-modules '(maybe-some-module org-habit-pus maybe-some-other-module))
+;;
+;; For a habit entry, set the HABIT_WEEKDAYS property to a space-separated list of weekdays the task might be done.
+;; Currently only day numbers are supported, e.g. 1 for Monday, 2 for Tuesday, etc.
+;; For example, if it is some work-related habit, the property might look like this:
+;; :HABIT_WEEKDAYS: 1 2 3 4 5
+;;
+;; WARNING: as for now, expect consistent behaviour only for ".+"-style habits
+;;
+;; if HABIT_WEEKDAYS is not set (or set to "1 2 3 4 5 6 7"), the results will be similar to those produced
+;; by the original org-habit module, except for the "++"-style habits, which didn't work for me with the
+;; original module. Sometimes the respective habit graph was fully red, although the habit was done always in time,
+;; this weird behaviour was fixed. 
+;;
+;; Although I've happily been using this module for more than a month, some bugs may eventually manifest themselves.
+;; Feedback therefore is greately appreciated.
+;;
 ;;; Code:
 
 (require 'org)
@@ -421,12 +445,12 @@ It will be green even if it was done after the deadline."
                            ;; (S-REPEAT hops - 1).
                            ;; unfortunately this simple formula doesn't work in most cases
                            ;; i.e. it works when a habit is done on time
-                           ;; but (almost) otherwise it produces a wrong decrement shifted by 1 S-REPEAT period into future or past:
+                           ;; but otherwise it produces a wrong decrement shifted by 1 S-REPEAT period into future or past:
                            ;; for a ++1w S-REPEAT it might give -35, -21, -14, -7, -7 instead of -35, -28, -21, -14, -7.
                            ;; At first glance, there must be corner-cases, which depending on the combination of S-REPEAT value, number 
                            ;; of S-REPEATs, days overdue, etc., will lead to such shift.
                            ;; The trivial solution used here is to apply this formula only once - the first time it is being used - to calculate
-                           ;; the "leftmost" shift and update it by S-REPEAT every S-REPEAT steps.
+                           ;; the "leftmost" shift and then update it by S-REPEAT every S-REPEAT steps.
                            (progn
                              (setq base scheduled)
                              (org-habit--cons+ base incr 'all))
@@ -478,8 +502,7 @@ It will be green even if it was done after the deadline."
               (while (and done-dates
                           (org-habit--car= start (car done-dates)))
                 (setq last-done-date (car done-dates)
-                      done-dates (cdr done-dates)
-                      )))
+                      done-dates (cdr done-dates))))
           (if todayp
               (aset graph index org-habit-today-glyph)))
         (setq face (if (or in-the-past-p todayp)
@@ -491,8 +514,7 @@ It will be green even if it was done after the deadline."
             (setq face (cdr faces)))
         (put-text-property index (1+ index) 'face face graph))
       (setq start (org-habit--cons+ start 1 'all)
-            index (1+ index))
-      )
+            index (1+ index)))
     graph))
 
 (defun org-habit-insert-consistency-graphs (&optional line)

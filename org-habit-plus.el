@@ -249,7 +249,7 @@ It will be green even if it was done after the deadline."
                                  ("%T" . ,org-ts-regexp)
                                  ("%u" . ".*?")
                                  ("%U" . ".*?")))))))))
-        (unless reversed (goto-char end))
+
         (while (and (< count maxdays) (funcall search re limit t))
           (let* ((tm (org-time-string-to-time
                       (or (org-match-string-no-properties 1)
@@ -276,8 +276,9 @@ It will be green even if it was done after the deadline."
   (let ((deadline (nth 2 habit)))
     (or deadline
         (if (nth 3 habit)
-            (+ (org-habit-scheduled habit)
-               (1- (org-habit-scheduled-repeat habit)))
+            (org-habit--cons+ (org-habit-scheduled habit)
+               (1- (org-habit-scheduled-repeat habit))
+               (org-habit-weekdays habit))
           (org-habit-scheduled habit)))))
 (defsubst org-habit-deadline-repeat (habit)
   (or (nth 3 habit)
@@ -373,13 +374,27 @@ It will be green even if it was done after the deadline."
         (setq wd 7)
       wd)))
 
+(defsubst org-habit--lacking-weekdays (wd inc w-days)
+  (let ((i 0)
+        (lack 0))
+    (while (< i inc)
+      (setq wd (org-habit--weekday-increment wd 1))
+      (if (member wd w-days)
+          (setq i (1+ i))
+        (setq lack (1+ lack)
+              i (1+ i))))
+    lack))
+
 (defsubst org-habit--cons+ (date inc w-days)
   (when (equal w-days 'all)
     (setq w-days '(1 2 3 4 5 6 7)))
   (let ((dt (+ (car date) inc))
-        (wd (org-habit--weekday-increment (cdr date) inc)))
-    (when (< wd 0)
+        (wd (org-habit--weekday-increment (cdr date) inc))
+        (lack (org-habit--lacking-weekdays (cdr date) inc w-days)))
+    (while (< wd 0)
       (setq wd (+ wd 7)))
+    (setq dt (+ dt lack)
+            wd (org-habit--weekday-increment wd lack))
     (while (not (member wd w-days))
       (setq dt (1+ dt)
             wd (org-habit--weekday-increment wd 1)))
@@ -434,8 +449,7 @@ It will be green even if it was done after the deadline."
              (skip-p (not (member (cdr start) w-days)))
              (faces (if (equal type "++")
                         (if (and in-the-past-p
-                                 (not (car last-done-date))
-                                 )
+                                 (not (car last-done-date)))
                             '(org-habit-clear-face . org-habit-clear-future-face)
                           (org-habit-get-faces
                            habit start
@@ -558,20 +572,25 @@ It will be green even if it was done after the deadline."
   (when (org-is-habit-p)
     (save-excursion
       (if pom (goto-char pom))
-      (let* ((weekdays (org-habit-get-weekdays (org-entry-properties (point)))) 
-             (weekday (org-habit--time-to-weekday (org-get-scheduled-time (point))))
-             (s-repeater (org-get-repeat org-scheduled-string))  ; scheduled repeater
-             (norm-r-days (org-habit--weekday-increment (org-habit-duration-to-days s-repeater) 0))) ; normalized repeat days (0..7) 
+      (let* ((w-days (org-habit-get-weekdays (org-entry-properties (point)))) 
+             (wd (org-habit--time-to-weekday (org-get-scheduled-time (point))))
+             (inc (org-habit-duration-to-days (org-get-repeat org-scheduled-string)))  ; scheduled repeater
+             (norm-inc (org-habit--weekday-increment inc 0))
+             (lack (org-habit--lacking-weekdays wd inc w-days))) ; normalized repeat days (0..7) 
         ;; Because the org-handled rescheduling actually happens after this function is executed via the hook,
         ;; we must adjust the date in advance  
-        (setq weekday (org-habit--weekday-increment weekday norm-r-days))
-        (while (not (member weekday weekdays))
-          (org-entry-put (point) "SCHEDULED" "later")
-          (setq weekday (org-habit--weekday-increment weekday 1)))))))
+        (message "%s %s %s %s" w-days wd norm-inc lack)
+        (setq wd (org-habit--weekday-increment wd norm-inc))
+        (while (not (member wd w-days))
+          (org-entry-put nil "SCHEDULED" "later")
+          (setq wd (org-habit--weekday-increment wd 1))
+          (message "%s %s" (org-habit--time-to-weekday (org-get-scheduled-time (point))) wd)
+          )))))
 
 (defun org-habit-maybe-reschedule ()
   (when (and (not (member org-state org-done-keywords))
              (member org-last-state org-done-keywords))
+    (message "reschedule")
     (org-habit-reschedule)))
 
 (add-hook 'org-after-todo-state-change-hook 'org-habit-maybe-reschedule)

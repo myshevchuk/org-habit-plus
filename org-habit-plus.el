@@ -172,6 +172,7 @@ It will be green even if it was done after the deadline."
   :group 'org-habit
   :group 'org-faces)
 
+(defvar org-habit-last-todo-change nil)
 (defun org-habit-duration-to-days (ts)
   (if (string-match "\\([0-9]+\\)\\([dwmy]\\)" ts)
       ;; lead time is specified.
@@ -277,8 +278,8 @@ It will be green even if it was done after the deadline."
     (or deadline
         (if (nth 3 habit)
             (org-habit--cons+ (org-habit-scheduled habit)
-               (1- (org-habit-scheduled-repeat habit))
-               (org-habit-weekdays habit))
+                              (1- (org-habit-scheduled-repeat habit))
+                              (org-habit-weekdays habit))
           (org-habit-scheduled habit)))))
 (defsubst org-habit-deadline-repeat (habit)
   (or (nth 3 habit)
@@ -339,7 +340,7 @@ It will be green even if it was done after the deadline."
                        (org-habit--cons+ scheduled (- d-repeat s-repeat) w-days)
                      (org-habit-deadline habit)))
          ;; (deadline (org-habit--cons+ scheduled (- d-repeat s-repeat) w-days))
-                  
+         
          (m-days (or now-days (cons (time-to-days (current-time)) (org-habit--time-to-weekday (current-time))))))
     ;; (message "scheduled: %s deadline %s" scheduled deadline)
     (cond
@@ -394,7 +395,7 @@ It will be green even if it was done after the deadline."
     (while (< wd 0)
       (setq wd (+ wd 7)))
     (setq dt (+ dt lack)
-            wd (org-habit--weekday-increment wd lack))
+          wd (org-habit--weekday-increment wd lack))
     (while (not (member wd w-days))
       (setq dt (1+ dt)
             wd (org-habit--weekday-increment wd 1)))
@@ -566,34 +567,53 @@ It will be green even if it was done after the deadline."
 
 (org-defkey org-agenda-mode-map "K" 'org-habit-toggle-habits)
 
-
 (defun org-habit-reschedule (&optional pom)
   "Reschedule habit on the allowed day"
-  (when (org-is-habit-p)
-    (save-excursion
-      (if pom (goto-char pom))
-      (let* ((w-days (org-habit-get-weekdays (org-entry-properties (point)))) 
-             (wd (org-habit--time-to-weekday (org-get-scheduled-time (point))))
-             (inc (org-habit-duration-to-days (org-get-repeat org-scheduled-string)))  ; scheduled repeater
-             (norm-inc (org-habit--weekday-increment inc 0))
-             (lack (org-habit--lacking-weekdays wd inc w-days))) ; normalized repeat days (0..7) 
-        ;; Because the org-handled rescheduling actually happens after this function is executed via the hook,
-        ;; we must adjust the date in advance  
+  (save-excursion
+    (if pom (goto-char pom))
+    (let* ((w-days (org-habit-get-weekdays (org-entry-properties (point)))) 
+           (wd (org-habit--time-to-weekday (org-get-scheduled-time (point))))
+           (inc (org-habit-duration-to-days (org-get-repeat org-scheduled-string)))  ; scheduled repeater
+           (norm-inc (org-habit--weekday-increment inc 0)) ; normalized repeat days (0..7) 
+           (lack (org-habit--lacking-weekdays wd inc w-days))) 
+      ;; Because the org-handled rescheduling actually happens after this function is executed via the hook,
+      ;; we must adjust the date in advance  
+      (message "%s" (point))
+      (message "%s %s %s %s" w-days wd norm-inc lack)
+      ;; (setq wd (org-habit--weekday-increment wd norm-inc))
+      (while (not (member wd w-days))
+        (org-entry-put nil "SCHEDULED" "later")
+        (setq wd (org-habit--weekday-increment wd 1))
         (message "%s %s %s %s" w-days wd norm-inc lack)
-        (setq wd (org-habit--weekday-increment wd norm-inc))
-        (while (not (member wd w-days))
-          (org-entry-put nil "SCHEDULED" "later")
-          (setq wd (org-habit--weekday-increment wd 1))
-          (message "%s %s" (org-habit--time-to-weekday (org-get-scheduled-time (point))) wd)
-          )))))
+        )
+      t)))
 
-(defun org-habit-maybe-reschedule ()
-  (when (and (not (member org-state org-done-keywords))
-             (member org-last-state org-done-keywords))
-    (message "reschedule")
-    (org-habit-reschedule)))
+(defun org-habit-maybe-reschedule (trigger-plist)
+  (when (org-is-habit-p)
+    (let ((type (plist-get trigger-plist :type))
+          (pos (plist-get trigger-plist :position))
+          (from (plist-get trigger-plist :from))
+          (to (plist-get trigger-plist :to)))
+      (message "%s" trigger-plist)
+      (when (equal type 'todo-state-change)
+        (if (not org-habit-last-todo-change)
+            (setq org-habit-last-todo-change trigger-plist)
+          (message "%s" org-habit-last-todo-change)
+          (when (and (member from org-not-done-keywords)
+                     (member to org-done-keywords)
+                     (equal type (plist-get org-habit-last-todo-change :type))
+                     (equal pos (plist-get org-habit-last-todo-change :position))
+                     (equal from (plist-get org-habit-last-todo-change :to))
+                     (equal to (plist-get org-habit-last-todo-change :from))
+                     )
+            (message "reschedule %s" (org-habit-reschedule pos))
+            (org-time-string-to-time "<2015-11-29 Sun .+2d/5d>")
+            (setq org-habit-last-todo-change nil)
+            )))
+      (message "%s %s %s %s" type pos from to)
+      )))
 
-(add-hook 'org-after-todo-state-change-hook 'org-habit-maybe-reschedule)
+(add-hook 'org-trigger-hook 'org-habit-maybe-reschedule)
 
 (provide 'org-habit-plus)
 

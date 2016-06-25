@@ -1,8 +1,12 @@
 # Project specific ignores #
 ############################
 
+# binaries
+
+*.elc
+
 # directories
-/*.html
+
 
 # Emacs temp files #
 ####################

@@ -203,7 +203,7 @@ It will be green even if it was done after the deadline."
     (if pom (goto-char pom))
     (assert (org-is-habit-p (point)))
     (let* ((scheduled (org-get-scheduled-time (point)))
-           (scheduled-repeat (org-get-repeat org-scheduled-string))
+           (scheduled-repeat (org-get-repeat))
            (end (org-entry-end-position))
            (habit-entry (org-no-properties (nth 4 (org-heading-components))))
            (w-days (org-habit-get-weekdays (org-entry-properties)))
@@ -573,7 +573,7 @@ It will be green even if it was done after the deadline."
     (if pom (goto-char pom))
     (let* ((w-days (org-habit-get-weekdays (org-entry-properties (point))))
            (wd (org-habit--time-to-weekday (org-get-scheduled-time (point))))
-           (inc (org-habit-duration-to-days (org-get-repeat org-scheduled-string)))  ; scheduled repeater
+           (inc (org-habit-duration-to-days (org-get-repeat)))  ; scheduled repeater
            (norm-inc (org-habit--weekday-increment inc 0)) ; normalized repeat days (0..7)
            (lack (org-habit--lacking-weekdays wd inc w-days)))
       ;; Because the org-handled rescheduling actually happens after this function is executed via the hook,

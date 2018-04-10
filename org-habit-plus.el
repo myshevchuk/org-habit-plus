@@ -34,7 +34,7 @@
 ;;
 ;; The main goal of org-habit-plus is to provide a way to track habits only on certain
 ;; days of week. The secondary goal (not realized yet) is to make it possible to distinguish between
-;; several DONE states. 
+;; several DONE states.
 ;;
 ;; Usage:
 ;;
@@ -50,7 +50,7 @@
 ;; if HABIT_WEEKDAYS is not set (or set to "1 2 3 4 5 6 7"), the results will be similar to those produced
 ;; by the original org-habit module, except for the "++"-style habits, which didn't work for me with the
 ;; original module. Sometimes the respective habit graph was fully red, although the habit was done always in time,
-;; this weird behaviour was fixed. 
+;; this weird behaviour was fixed.
 ;;
 ;; Although I've happily been using this module for more than a month, some bugs may eventually manifest themselves.
 ;; Feedback therefore is greately appreciated.
@@ -203,7 +203,7 @@ It will be green even if it was done after the deadline."
     (if pom (goto-char pom))
     (assert (org-is-habit-p (point)))
     (let* ((scheduled (org-get-scheduled-time (point)))
-           (scheduled-repeat (org-get-repeat org-scheduled-string))
+           (scheduled-repeat (org-get-repeat))
            (end (org-entry-end-position))
            (habit-entry (org-no-properties (nth 4 (org-heading-components))))
            (w-days (org-habit-get-weekdays (org-entry-properties)))
@@ -340,12 +340,12 @@ It will be green even if it was done after the deadline."
                        (org-habit--cons+ scheduled (- d-repeat s-repeat) w-days)
                      (org-habit-deadline habit)))
          ;; (deadline (org-habit--cons+ scheduled (- d-repeat s-repeat) w-days))
-         
+
          (m-days (or now-days (cons (time-to-days (current-time)) (org-habit--time-to-weekday (current-time))))))
     ;; (message "scheduled: %s deadline %s" scheduled deadline)
     (cond
      ((or skip-p (org-habit--car< m-days scheduled))
-      (if (and (not scheduled-days) donep) 
+      (if (and (not scheduled-days) donep)
           '(org-habit-ready-face . org-habit-ready-future-face)
         '(org-habit-clear-face . org-habit-clear-future-face)))
      ((org-habit--car< m-days deadline)
@@ -437,11 +437,11 @@ It will be green even if it was done after the deadline."
       (when (equal type "++")
         (setq incr (if (not incr)
                        (progn
-                         (setq ++incr (if (= s-repeat 1) 
-                                          (+ 1 (- (car last-done-date) (car scheduled))) 
+                         (setq ++incr (if (= s-repeat 1)
+                                          (+ 1 (- (car last-done-date) (car scheduled)))
                                         (* (+ 0 (/ (- (car ++start) (car scheduled)) s-repeat)) s-repeat))
                                ++index (- ++incr (- (car ++start) (car scheduled))))
-                         ++incr) 
+                         ++incr)
                      incr)))
       (let* ((in-the-past-p (< (car start) now))
              (todayp (= (car start) now))
@@ -462,7 +462,7 @@ It will be green even if it was done after the deadline."
                            ;; i.e. it works when a habit is done on time
                            ;; but otherwise it produces a wrong decrement shifted by 1 S-REPEAT period into future or past:
                            ;; for a ++1w S-REPEAT it might give -35, -21, -14, -7, -7 instead of -35, -28, -21, -14, -7.
-                           ;; At first glance, there must be corner-cases, which depending on the combination of S-REPEAT value, number 
+                           ;; At first glance, there must be corner-cases, which depending on the combination of S-REPEAT value, number
                            ;; of S-REPEATs, days overdue, etc., will lead to such shift.
                            ;; The trivial solution used here is to apply this formula only once - the first time it is being used - to calculate
                            ;; the "leftmost" shift and then update it by S-REPEAT every S-REPEAT steps.
@@ -475,19 +475,19 @@ It will be green even if it was done after the deadline."
                                (not (< (car scheduled) now)))
                           '(org-habit-clear-face . org-habit-clear-future-face)
                         (org-habit-get-faces
-                         habit start 
+                         habit start
                          (and in-the-past-p last-done-date
                               ;; Compute scheduled time for habit at the
                               ;; time START was current.
                               (cond
                                ((equal type ".+")
-                                (setq base last-done-date 
+                                (setq base last-done-date
                                       incr s-repeat))
                                ((equal type "+")
                                 ;; Since LAST-DONE-DATE, each done
                                 ;; mark shifted scheduled date by
                                 ;; S-REPEAT.
-                                (setq base scheduled 
+                                (setq base scheduled
                                       incr (- (* (length done-dates) s-repeat)))))
                               (org-habit--cons+ base incr w-days))
                          donep skip-p))))
@@ -571,13 +571,13 @@ It will be green even if it was done after the deadline."
   "Reschedule habit on the allowed day"
   (save-excursion
     (if pom (goto-char pom))
-    (let* ((w-days (org-habit-get-weekdays (org-entry-properties (point)))) 
+    (let* ((w-days (org-habit-get-weekdays (org-entry-properties (point))))
            (wd (org-habit--time-to-weekday (org-get-scheduled-time (point))))
-           (inc (org-habit-duration-to-days (org-get-repeat org-scheduled-string)))  ; scheduled repeater
-           (norm-inc (org-habit--weekday-increment inc 0)) ; normalized repeat days (0..7) 
-           (lack (org-habit--lacking-weekdays wd inc w-days))) 
+           (inc (org-habit-duration-to-days (org-get-repeat)))  ; scheduled repeater
+           (norm-inc (org-habit--weekday-increment inc 0)) ; normalized repeat days (0..7)
+           (lack (org-habit--lacking-weekdays wd inc w-days)))
       ;; Because the org-handled rescheduling actually happens after this function is executed via the hook,
-      ;; we must adjust the date in advance  
+      ;; we must adjust the date in advance
       (message "%s" (point))
       (message "%s %s %s %s" w-days wd norm-inc lack)
       ;; (setq wd (org-habit--weekday-increment wd norm-inc))

@@ -201,7 +201,7 @@ It will be green even if it was done after the deadline."
                   This list represents a \"habit\" for the rest of this module."
   (save-excursion
     (if pom (goto-char pom))
-    (assert (org-is-habit-p (point)))
+    (cl-assert (org-is-habit-p (point)))
     (let* ((scheduled (org-get-scheduled-time (point)))
            (scheduled-repeat (org-get-repeat))
            (end (org-entry-end-position))
@@ -217,7 +217,7 @@ It will be green even if it was done after the deadline."
          habit-entry))
       (setq sr-days (org-habit-duration-to-days scheduled-repeat)
             sr-type (progn (string-match "[\\.+]?\\+" scheduled-repeat)
-                           (org-match-string-no-properties 0 scheduled-repeat)))
+                           (match-string-no-properties 0 scheduled-repeat)))
       (unless (> sr-days 0)
         (error "Habit %s scheduled repeat period is less than 1d" habit-entry))
       (when (string-match "/\\([0-9]+[dwmy]\\)" scheduled-repeat)
@@ -253,8 +253,8 @@ It will be green even if it was done after the deadline."
 
         (while (and (< count maxdays) (funcall search re limit t))
           (let* ((tm (org-time-string-to-time
-                      (or (org-match-string-no-properties 1)
-                          (org-match-string-no-properties 2))))
+                      (or (match-string-no-properties 1)
+                          (match-string-no-properties 2))))
                  (weekday (string-to-number (format-time-string "%u" tm)))
                  (time (time-to-days tm)))
             (push (cons time weekday) closed-dates-weekdays)

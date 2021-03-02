@@ -61,7 +61,7 @@
 (require 'org-agenda)
 
 (eval-when-compile
-  (require 'cl-lib))
+  (require 'cl-macs))
 
 (defgroup org-habit nil
   "Options concerning habit tracking in Org-mode."

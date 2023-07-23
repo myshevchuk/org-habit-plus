@@ -1,8 +1,22 @@
 #+TITLE:	Org Habit +
 #+AUTHOR:	Michale Shevchuk
 #+EMAIL:	m.shev4uk@gmail.com
-#+DATE:		2015-11-23
+#+ORIGINAL_DATE:		2015-11-23
+#+DATE: <2023-07-23 Sun>
 #+STARTUP:	content
+
+* WARNING
+
+This will probably break with the most recent Org version.  Versions from around 2021 (Org 8?) should work though.
+
+* Looking for a maintainer
+
+This project is an old proof-of-concept sketch rather than an actively
+developed work.  Unfortunately, I've never found time and skills to push it to
+a more mature state.  If you are willing to become a maintainer/developer of
+the ideas behind `org-habit-plus`, I'll happily transfer the ownership of this
+repository to you.  Let me know here:
+https://github.com/myshevchuk/org-habit-plus/issues/4.
 
 * What's this?
 
@@ -23,10 +37,6 @@
 
   As simple as specifying the weekdays (1 = Monday, 7 = Sunday, space separated), on which a habit is expected to be performed, in the =:HABIT_WEEKDAYS:= property.
 
-* WARNING!!!
+* What doesn't work
 
   Expect consistent behaviour only for ".+"-style habits. The "+"- and "++"-style habits are better, at least for now, to be used the original way.
-
-* TODO 
-
-  Be more verbose.
